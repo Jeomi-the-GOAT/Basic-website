@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Daily Lap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF1F7; --surface:#FFFFFF; --ink:#14213D; --muted:#53627F; --line:#D5DDEA;
+  --steps:#2F5BFF; --steps-soft:#DCE4FF; --cal:#F2A900; --cal-soft:#FFF0C4;
+  --ok:#128A5E; --over:#C23B3B; --track:#E3E9F3;
+  --display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1626; --surface:#172238; --ink:#EAF0FA; --muted:#9FAECA; --line:#263450;
+    --steps:#7C98FF; --steps-soft:#24335F; --cal:#FFC53D; --cal-soft:#4A3A12;
+    --ok:#4ED3A0; --over:#FF8A8A; --track:#22304C;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1626; --surface:#172238; --ink:#EAF0FA; --muted:#9FAECA; --line:#263450;
+  --steps:#7C98FF; --steps-soft:#24335F; --cal:#FFC53D; --cal-soft:#4A3A12;
+  --ok:#4ED3A0; --over:#FF8A8A; --track:#22304C;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:20px 18px 56px}
+h1,h2,h3{font-family:var(--display);margin:0;line-height:1.1;letter-spacing:-0.01em}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--steps);outline-offset:2px;border-radius:6px}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.brand{font-family:var(--display);font-weight:800;font-size:1.35rem;letter-spacing:-0.02em}
+.top-right{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.95rem}
+.icon-btn{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:.9rem}
+
+/* daily lesson */
+.lesson{background:var(--ink);color:var(--bg);border-radius:20px;padding:26px 28px 20px;margin-bottom:22px}
+:root[data-theme="dark"] .lesson{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .lesson{background:var(--surface);color:var(--ink);border:1px solid var(--line)}}
+.lesson-when{font-size:.9rem;opacity:.75;margin:0 0 10px}
+.lesson-text{font-family:var(--display);font-weight:700;font-size:clamp(1.35rem,3.2vw,2.15rem);line-height:1.2;letter-spacing:-0.015em;margin:0;max-width:30em;text-wrap:balance}
+.lesson-why{margin:12px 0 0;max-width:60ch;opacity:.85;font-size:1rem}
+.lesson-nav{display:flex;gap:8px;margin-top:18px}
+.lesson-nav button{background:transparent;border:1px solid currentColor;border-radius:999px;padding:6px 14px;opacity:.85;font-size:.9rem}
+.lesson-nav button:disabled{opacity:.3;cursor:default}
+
+/* hero */
+.grid{display:grid;grid-template-columns:1fr;gap:22px}
+@media (min-width:900px){.grid{grid-template-columns:1fr 1fr;align-items:start}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px}
+.card h2{font-size:1.5rem;margin-bottom:4px}
+.sub{color:var(--muted);margin:0 0 18px;font-size:.95rem}
+
+.hero{display:grid;grid-template-columns:1fr;gap:20px;align-items:center;justify-items:center;margin-bottom:22px}
+@media (min-width:700px){.hero{grid-template-columns:auto 1fr;justify-items:start;gap:40px}}
+.rings{width:min(280px,76vw);height:auto;flex:none}
+.rings .bg{fill:none;stroke:var(--track)}
+.rings .fg{fill:none;stroke-linecap:round;transform:rotate(-90deg);transform-origin:140px 140px;transition:stroke-dashoffset .8s cubic-bezier(.2,.8,.2,1)}
+.rings .s{stroke:var(--steps)}
+.rings .c{stroke:var(--cal)}
+.rings .c.over{stroke:var(--over)}
+.rings text{fill:var(--ink);font-family:var(--display);text-anchor:middle}
+.rings .big{font-size:40px;font-weight:800}
+.rings .small{font-size:13px;fill:var(--muted);font-family:var(--body)}
+.legend{display:grid;gap:18px;width:100%}
+.stat{display:grid;grid-template-columns:14px 1fr;column-gap:12px;align-items:start}
+.dot{width:14px;height:14px;border-radius:50%;margin-top:8px}
+.stat .num{font-family:var(--display);font-weight:800;font-size:2rem;line-height:1.1}
+.stat .lbl{color:var(--muted);font-size:.95rem}
+.stat .goal{display:inline-flex;align-items:center;gap:6px;margin-top:6px;color:var(--muted);font-size:.9rem}
+.goal input{width:78px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg)}
+
+/* controls */
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:7px 14px;font-size:.95rem}
+.chip:hover{border-color:var(--steps)}
+.chip.plus{background:var(--steps-soft);border-color:transparent;font-weight:600}
+.btn{border:0;background:var(--steps);color:#fff;border-radius:12px;padding:10px 18px;font-weight:600}
+:root[data-theme="dark"] .btn{color:#0E1626}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn{color:#0E1626}}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.small{padding:7px 12px;font-size:.9rem}
+.field{display:flex;flex-direction:column;gap:4px;flex:1 1 120px;min-width:0}
+.field span{font-size:.85rem;color:var(--muted)}
+.field input,.field select{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);width:100%}
+.form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:16px 0}
+.sep{height:1px;background:var(--line);margin:20px 0;border:0}
+.note{font-size:.88rem;color:var(--muted);margin:10px 0 0}
+.status{font-size:.9rem;color:var(--ok);margin:8px 0 0;min-height:1.3em}
+.status.err{color:var(--over)}
+
+/* food list */
+.meal{margin-top:16px}
+.meal h3{font-size:1.05rem;display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:6px}
+.meal h3 span{color:var(--muted);font-family:var(--body);font-weight:500;font-size:.95rem}
+.food{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.food:last-child{border-bottom:0}
+.food .nm{overflow-wrap:anywhere}
+.food .kc{white-space:nowrap;color:var(--muted)}
+.food button{border:0;background:transparent;color:var(--muted);font-size:1.2rem;line-height:1;padding:4px 8px;border-radius:8px}
+.food button:hover{color:var(--over)}
+.empty{color:var(--muted);padding:14px 0}
+
+/* history */
+.history{margin-top:22px}
+.tabs{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;margin:4px 0 14px}
+.tabs button{border:0;background:transparent;padding:6px 16px;font-size:.9rem}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.chart-scroll{overflow-x:auto}
+.chart{width:100%;min-width:420px;height:auto;display:block}
+.chart text{fill:var(--muted);font-size:12px;font-family:var(--body);text-anchor:middle}
+.chart .val{fill:var(--ink);font-weight:600}
+.chart .goalline{stroke:var(--muted);stroke-dasharray:4 4}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="brand">Daily Lap</div>
+    <div class="top-right">
+      <span id="today-label"></span>
+      <button class="icon-btn" id="theme-btn" type="button">Theme</button>
+    </div>
+  </div>
+
+  <section class="lesson" aria-labelledby="lesson-text">
+    <p class="lesson-when" id="lesson-when"></p>
+    <p class="lesson-text" id="lesson-text"></p>
+    <p class="lesson-why" id="lesson-why"></p>
+    <div class="lesson-nav">
+      <button type="button" id="tip-prev">Earlier lesson</button>
+      <button type="button" id="tip-next">Later lesson</button>
+    </div>
+  </section>
+
+  <section class="card hero" aria-label="Today at a glance">
+    <svg class="rings" viewBox="0 0 280 280" role="img" aria-label="Progress rings for steps and calories">
+      <circle class="bg" cx="140" cy="140" r="122" stroke-width="20"/>
+      <circle class="bg" cx="140" cy="140" r="94" stroke-width="20"/>
+      <circle class="fg s" id="ring-steps" cx="140" cy="140" r="122" stroke-width="20"/>
+      <circle class="fg c" id="ring-cal" cx="140" cy="140" r="94" stroke-width="20"/>
+      <text class="big" x="140" y="144" id="ring-big">0</text>
+      <text class="small" x="140" y="168" id="ring-small">steps today</text>
+    </svg>
+    <div class="legend">
+      <div class="stat">
+        <span class="dot" style="background:var(--steps)"></span>
+        <div>
+          <div class="num" id="hero-steps">0</div>
+          <div class="lbl" id="hero-steps-lbl"></div>
+          <label class="goal">Daily goal <input type="number" id="goal-steps" min="500" step="500" inputmode="numeric"> steps</label>
+        </div>
+      </div>
+      <div class="stat">
+        <span class="dot" style="background:var(--cal)"></span>
+        <div>
+          <div class="num" id="hero-cal">0</div>
+          <div class="lbl" id="hero-cal-lbl"></div>
+          <label class="goal">Daily goal <input type="number" id="goal-cal" min="800" step="50" inputmode="numeric"> kcal</label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="grid">
+
+    <section class="card" aria-labelledby="steps-h">
+      <h2 id="steps-h">Steps</h2>
+      <p class="sub" id="steps-sub"></p>
+
+      <div class="row" role="group" aria-label="Quick add steps">
+        <button type="button" class="chip plus" data-add="500">+500</button>
+        <button type="button" class="chip plus" data-add="1000">+1,000</button>
+        <button type="button" class="chip plus" data-add="2500">+2,500</button>
+        <button type="button" class="chip plus" data-add="5000">+5,000</button>
+      </div>
+
+      <form class="form" id="steps-form">
+        <label class="field"><span>Steps</span><input type="number" id="steps-input" min="0" step="1" inputmode="numeric" placeholder="e.g. 3200"></label>
+        <button class="btn" type="submit" id="steps-add">Add steps</button>
+        <button class="btn ghost" type="button" id="steps-set">Set total</button>
+      </form>
+
+      <hr class="sep">
+      <h3 style="font-size:1.1rem;margin-bottom:6px">Count steps with your phone</h3>
+      <p class="sub" style="margin-bottom:12px">Uses your phone's motion sensor while this page stays open. Keep the phone in a pocket and walk.</p>
+      <div class="row">
+        <button class="btn small" type="button" id="motion-btn">Start counting</button>
+        <button class="btn ghost small" type="button" id="steps-reset">Reset today</button>
+      </div>
+      <p class="status" id="motion-status" aria-live="polite"></p>
+      <p class="note">Sensor counts are estimates and work best on a phone. A smartwatch or health app is more accurate, so you can type its total above.</p>
+    </section>
+
+    <section class="card" aria-labelledby="cal-h">
+      <h2 id="cal-h">Calories</h2>
+      <p class="sub">Log what you eat. Totals update as you go.</p>
+
+      <div class="row" role="group" aria-label="Quick add foods" id="quick"></div>
+
+      <form class="form" id="food-form">
+        <label class="field" style="flex:2 1 160px"><span>Food</span><input type="text" id="food-name" maxlength="60" placeholder="e.g. Chicken wrap" required></label>
+        <label class="field" style="flex:1 1 90px"><span>Calories</span><input type="number" id="food-kcal" min="1" max="5000" inputmode="numeric" placeholder="kcal" required></label>
+        <label class="field" style="flex:1 1 110px"><span>Meal</span>
+          <select id="food-meal"><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option></select>
+        </label>
+        <button class="btn" type="submit">Log food</button>
+      </form>
+
+      <div id="food-list"></div>
+      <p class="note">Food amounts are typical values. Check packaging for exact numbers.</p>
+    </section>
+  </div>
+
+  <section class="card history" aria-labelledby="hist-h">
+    <h2 id="hist-h">Last 7 days</h2>
+    <div class="tabs" role="group" aria-label="Chart metric">
+      <button type="button" id="tab-steps" aria-pressed="true">Steps</button>
+      <button type="button" id="tab-cal" aria-pressed="false">Calories</button>
+    </div>
+    <div class="chart-scroll"><svg class="chart" id="chart" viewBox="0 0 700 230" role="img" aria-label="Bar chart of the last seven days"></svg></div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- daily lessons (original, general-education wording) ---------- */
+  var LESSONS = [
+    ["A calorie is a unit of energy. The \"calories\" on food labels are really kilocalories (kcal).", "It is the amount of heat needed to warm one litre of water by about one degree Celsius, which is why it measures energy."],
+    ["Protein, carbs and fat give 4, 4 and 9 kcal per gram. Alcohol gives 7.", "This is why fatty foods pack more energy into a small portion, and why the numbers on labels add up the way they do."],
+    ["Ten thousand steps is a round number, not a magic line. Health benefits show up well below it.", "Large studies link roughly 6,000 to 8,000 steps a day with lower risk of early death in many adults. More is still good."],
+    ["Your muscles get stronger while you recover, not while you lift.", "Training creates the signal. Sleep, food and rest days are when the repair work happens."],
+    ["Most of the energy you burn each day goes to simply staying alive.", "Breathing, circulation and keeping warm account for the largest share, often 60 to 70 percent of daily energy."],
+    ["Everyday movement counts. Walking, chores and fidgeting add up to hundreds of calories.", "Scientists call this non-exercise activity. It varies a lot between people and is easy to raise with small habits."],
+    ["Adults are advised to get at least 150 minutes of moderate activity each week.", "That is about 30 minutes on five days. Brisk walking counts."],
+    ["Do strength training on at least two days a week.", "It protects muscle and bone as you age, and it helps with balance, which lowers the risk of falls."],
+    ["Spot reduction is a myth. Crunches do not burn belly fat.", "Your body decides where fat comes from. Overall activity and nutrition change fat levels everywhere over time."],
+    ["Progressive overload means doing slightly more over time: more weight, reps or sets.", "Your body only adapts when the challenge goes a little beyond what it is used to."],
+    ["The talk test: at moderate effort you can talk but not sing.", "If you can only say a few words at a time, you are working hard. If you can sing, you can go a bit faster."],
+    ["A pace of about 100 steps per minute is a common benchmark for moderate walking.", "Try counting your steps for one minute on your next walk to see where you are."],
+    ["Eat slowly. Feeling full can take around 20 minutes to register.", "Your gut and brain exchange signals gradually, so quick meals make it easy to eat past comfortable fullness."],
+    ["Liquid calories are less filling than solid food.", "Juice, soda and sweet coffee drinks add energy without much feeling of fullness, so they are easy to miss."],
+    ["Fibre slows digestion and helps you feel full.", "Most adults do well with about 25 to 35 grams a day from vegetables, fruit, beans and whole grains."],
+    ["Protein helps you keep muscle when you eat fewer calories.", "Spreading it across meals, for example eggs, fish, beans or yogurt, is a simple way to get enough."],
+    ["Your weight can swing by a kilogram or more in a day from water alone.", "Judge progress by the trend over weeks, not by a single morning on the scale."],
+    ["Consistency beats intensity. A 20-minute walk every day outperforms one heroic workout a month.", "Habits you can repeat on a bad day are the ones that last."],
+    ["Short walks after meals can help blunt the rise in blood sugar.", "Even 10 minutes of gentle walking helps your muscles take up glucose from the meal."],
+    ["Sitting for hours is its own risk, separate from exercise.", "Stand up and move for a minute or two every 30 to 60 minutes."],
+    ["Regularly sleeping under seven hours is linked with stronger hunger and cravings.", "Poor sleep shifts hunger hormones, so rest is part of any nutrition plan."],
+    ["Muscle soreness peaks one to three days after a new workout.", "It is common after unfamiliar exercise but is not a good measure of how effective the session was."],
+    ["Warm up for five to ten minutes before harder exercise.", "Easy movement raises blood flow and muscle temperature and prepares your joints for the work."],
+    ["Dynamic movement before, static stretching after.", "Leg swings and light jogging prepare you to move. Holding stretches is best saved for when you are warm and done."],
+    ["Lifting weights loads your bones, which helps keep them dense.", "Impact and resistance both send a signal to bone to stay strong."],
+    ["Check the serving size on a label first.", "Calories on the front are for one serving, and a packet often holds two or more."],
+    ["Labels are estimates. Calorie counts can be off by a noticeable margin.", "Track consistently and watch the trend rather than chasing exact numbers."],
+    ["Cooking at home gives you control over portions, oil and sauces.", "Restaurant dishes tend to have more fat and salt, and larger servings."],
+    ["Water needs vary. For most healthy people, thirst and pale-yellow urine are good guides.", "You also get water from food, tea and coffee."],
+    ["Rest days are part of your plan, not a break from it.", "Planned recovery lowers injury risk and helps you train better on the days you go hard."],
+    ["Start smaller than you think you need to.", "Adding 500 steps a day for a week is easier to keep than a new 10,000-step goal, and it builds the habit."],
+    ["A rough maximum heart rate is 220 minus your age. It is only an estimate.", "Individual maximums differ by 10 beats or more, so use perceived effort alongside any number."],
+    ["Pair a new habit with one you already have.", "Walk right after your morning coffee or while taking a phone call. The old habit acts as the cue."],
+    ["Cardio and strength training work best together.", "Cardio trains your heart and lungs. Strength protects muscle and joints. You need both."],
+    ["Fruit and vegetables fill your plate with few calories per bite.", "Their water and fibre give volume, so you feel satisfied on less energy."],
+    ["Small daily gaps add up: 100 extra kcal a day is about 3,000 over a month.", "Small, steady changes are easier to keep than big, short-lived ones."]
+  ];
+
+  /* ---------- helpers ---------- */
+  var $ = function(id){ return document.getElementById(id); };
+  var fmt = function(n){ return Math.round(n).toLocaleString(); };
+  function keyFor(d){
+    var m = d.getMonth()+1, day = d.getDate();
+    return d.getFullYear()+"-"+(m<10?"0":"")+m+"-"+(day<10?"0":"")+day;
+  }
+  function dayNumber(d){ return Math.floor(new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()/86400000 - d.getTimezoneOffset()/1440); }
+
+  /* ---------- storage (try/catch, falls back to memory) ---------- */
+  var KEY = "dailylap.v1", mem = null, saveTimer = null;
+  function defaults(){ return {goals:{steps:8000, cal:2000}, days:{}, theme:null}; }
+  function load(){
+    var s = null;
+    try { var raw = localStorage.getItem(KEY); if(raw) s = JSON.parse(raw); } catch(e){}
+    if(!s || typeof s !== "object") s = mem || defaults();
+    if(!s.goals) s.goals = {steps:8000, cal:2000};
+    if(!s.days) s.days = {};
+    return s;
+  }
+  function saveNow(){
+    mem = state;
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+  }
+  function save(){ clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 400); }
+
+  var state = load();
+  var todayKey = keyFor(new Date());
+  var tipOffset = 0;
+
+  function dayData(k){
+    if(!state.days[k]) state.days[k] = {steps:0, foods:[]};
+    return state.days[k];
+  }
+
+  /* ---------- theme ---------- */
+  function applyTheme(){
+    if(state.theme) document.documentElement.setAttribute("data-theme", state.theme);
+    else document.documentElement.removeAttribute("data-theme");
+  }
+  $("theme-btn").addEventListener("click", function(){
+    var dark = document.documentElement.getAttribute("data-theme") === "dark" ||
+      (!document.documentElement.getAttribute("data-theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    state.theme = dark ? "light" : "dark";
+    applyTheme(); saveNow();
+  });
+
+  /* ---------- lesson ---------- */
+  function renderLesson(){
+    var base = dayNumber(new Date());
+    var idx = (((base + tipOffset) % LESSONS.length) + LESSONS.length) % LESSONS.length;
+    $("lesson-text").textContent = LESSONS[idx][0];
+    $("lesson-why").textContent = LESSONS[idx][1];
+    $("lesson-when").textContent = tipOffset === 0 ? "Today's lesson" : tipOffset === -1 ? "Yesterday's lesson" : (-tipOffset) + " days ago";
+    $("tip-next").disabled = tipOffset >= 0;
+  }
+  $("tip-prev").addEventListener("click", function(){ tipOffset--; renderLesson(); });
+  $("tip-next").addEventListener("click", function(){ if(tipOffset<0){ tipOffset++; renderLesson(); } });
+
+  /* ---------- rings ---------- */
+  var R_OUT = 122, R_IN = 94;
+  var C_OUT = 2*Math.PI*R_OUT, C_IN = 2*Math.PI*R_IN;
+  function setRing(el, C, p){
+    el.style.strokeDasharray = C;
+    el.style.strokeDashoffset = C * (1 - Math.max(0, Math.min(1, p)));
+  }
+
+  /* ---------- steps ---------- */
+  var KCAL_PER_STEP = 0.04, KM_PER_STEP = 0.00075;
+  function addSteps(n){
+    var d = dayData(todayKey);
+    d.steps = Math.max(0, Math.round(d.steps + n));
+    save(); render();
+  }
+  document.querySelectorAll("[data-add]").forEach(function(b){
+    b.addEventListener("click", function(){ addSteps(parseInt(b.getAttribute("data-add"),10)); });
+  });
+  $("steps-form").addEventListener("submit", function(e){
+    e.preventDefault();
+    var v = parseInt($("steps-input").value,10);
+    if(!isFinite(v) || v <= 0) return;
+    addSteps(v); $("steps-input").value = "";
+  });
+  $("steps-set").addEventListener("click", function(){
+    var v = parseInt($("steps-input").value,10);
+    if(!isFinite(v) || v < 0) return;
+    dayData(todayKey).steps = v; save(); render(); $("steps-input").value = "";
+  });
+  $("steps-reset").addEventListener("click", function(){
+    dayData(todayKey).steps = 0; save(); render();
+  });
+
+  /* motion sensor step counter */
+  var motionOn = false, lp = 9.8, above = false, lastStep = 0;
+  function onMotion(e){
+    var a = e.accelerationIncludingGravity;
+    if(!a || a.x == null) return;
+    var m = Math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
+    lp = lp*0.92 + m*0.08;
+    var d = m - lp, now = Date.now();
+    if(d > 1.4 && !above && now - lastStep > 300){
+      above = true; lastStep = now;
+      if(keyFor(new Date()) !== todayKey){ todayKey = keyFor(new Date()); }
+      var day = dayData(todayKey); day.steps += 1; save(); renderLive();
+    } else if(d < 0.4){ above = false; }
+  }
+  function setStatus(msg, err){
+    var s = $("motion-status"); s.textContent = msg; s.className = "status" + (err ? " err" : "");
+  }
+  function stopMotion(){
+    window.removeEventListener("devicemotion", onMotion);
+    motionOn = false; $("motion-btn").textContent = "Start counting"; setStatus("Step counting paused.");
+    saveNow();
+  }
+  function startMotion(){
+    if(!("DeviceMotionEvent" in window)){ setStatus("This device or browser has no motion sensor. Add steps by hand instead.", true); return; }
+    var go = function(){
+      var got = false;
+      var probe = function(){ got = true; window.removeEventListener("devicemotion", probe); };
+      window.addEventListener("devicemotion", probe);
+      window.addEventListener("devicemotion", onMotion);
+      motionOn = true; $("motion-btn").textContent = "Pause counting"; setStatus("Counting. Keep this page open while you walk.");
+      setTimeout(function(){
+        if(!got && motionOn){ stopMotion(); setStatus("No motion data received. Try on a phone, or add steps by hand.", true); }
+      }, 2500);
+    };
+    try {
+      if(typeof DeviceMotionEvent.requestPermission === "function"){
+        DeviceMotionEvent.requestPermission().then(function(r){
+          if(r === "granted") go(); else setStatus("Motion access was denied. Enable it in your browser settings.", true);
+        }).catch(function(){ setStatus("Motion access is not available here. Add steps by hand instead.", true); });
+      } else { go(); }
+    } catch(err){ setStatus("Motion sensing is not available here. Add steps by hand instead.", true); }
+  }
+  $("motion-btn").addEventListener("click", function(){ motionOn ? stopMotion() : startMotion(); });
+
+  /* ---------- food ---------- */
+  var QUICK = [["Banana",105],["Egg",70],["Apple",95],["Oatmeal",150],["Rice, 1 cup",205],["Chicken breast",165],["Greek yogurt",100],["Toast slice",80]];
+  var MEALS = ["Breakfast","Lunch","Dinner","Snack"];
+  function addFood(name, kcal, meal){
+    var d = dayData(todayKey);
+    d.foods.push({id: Date.now()+"-"+Math.random().toString(36).slice(2,6), name:name, kcal:Math.round(kcal), meal:meal});
+    save(); render();
+  }
+  (function buildQuick(){
+    var wrap = $("quick");
+    QUICK.forEach(function(q){
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "chip";
+      b.textContent = q[0] + " " + q[1];
+      b.setAttribute("aria-label", "Add " + q[0] + ", " + q[1] + " calories");
+      b.addEventListener("click", function(){ addFood(q[0], q[1], $("food-meal").value); });
+      wrap.appendChild(b);
+    });
+  })();
+  $("food-form").addEventListener("submit", function(e){
+    e.preventDefault();
+    var name = $("food-name").value.trim(), kcal = parseInt($("food-kcal").value,10);
+    if(!name || !isFinite(kcal) || kcal <= 0) return;
+    addFood(name, kcal, $("food-meal").value);
+    $("food-name").value = ""; $("food-kcal").value = ""; $("food-name").focus();
+  });
+  function renderFoods(){
+    var list = $("food-list"); list.textContent = "";
+    var foods = dayData(todayKey).foods;
+    if(!foods.length){
+      var p = document.createElement("p"); p.className = "empty";
+      p.textContent = "Nothing logged yet. Tap a quick food above or add your own.";
+      list.appendChild(p); return;
+    }
+    MEALS.forEach(function(meal){
+      var items = foods.filter(function(f){ return f.meal === meal; });
+      if(!items.length) return;
+      var total = items.reduce(function(a,f){ return a + f.kcal; }, 0);
+      var sec = document.createElement("div"); sec.className = "meal";
+      var h = document.createElement("h3");
+      h.appendChild(document.createTextNode(meal));
+      var sp = document.createElement("span"); sp.textContent = fmt(total) + " kcal"; h.appendChild(sp);
+      sec.appendChild(h);
+      items.forEach(function(f){
+        var r = document.createElement("div"); r.className = "food";
+        var nm = document.createElement("span"); nm.className = "nm"; nm.textContent = f.name;
+        var right = document.createElement("span");
+        var kc = document.createElement("span"); kc.className = "kc"; kc.textContent = fmt(f.kcal) + " kcal";
+        var del = document.createElement("button"); del.type = "button"; del.textContent = "\u00D7";
+        del.setAttribute("aria-label", "Remove " + f.name);
+        del.addEventListener("click", function(){
+          var d = dayData(todayKey); d.foods = d.foods.filter(function(x){ return x.id !== f.id; });
+          save(); render();
+        });
+        right.appendChild(kc); right.appendChild(del);
+        r.appendChild(nm); r.appendChild(right); sec.appendChild(r);
+      });
+      list.appendChild(sec);
+    });
+  }
+
+  /* ---------- goals ---------- */
+  $("goal-steps").addEventListener("change", function(){
+    var v = parseInt(this.value,10); if(isFinite(v) && v >= 100){ state.goals.steps = v; save(); render(); } else this.value = state.goals.steps;
+  });
+  $("goal-cal").addEventListener("change", function(){
+    var v = parseInt(this.value,10); if(isFinite(v) && v >= 500){ state.goals.cal = v; save(); render(); } else this.value = state.goals.cal;
+  });
+
+  /* ---------- chart ---------- */
+  var metric = "steps";
+  function setMetric(m){
+    metric = m;
+    $("tab-steps").setAttribute("aria-pressed", m === "steps");
+    $("tab-cal").setAttribute("aria-pressed", m === "cal");
+    renderChart();
+  }
+  $("tab-steps").addEventListener("click", function(){ setMetric("steps"); });
+  $("tab-cal").addEventListener("click", function(){ setMetric("cal"); });
+  function dayTotals(k){
+    var d = state.days[k]; if(!d) return {steps:0, cal:0};
+    return {steps:d.steps||0, cal:(d.foods||[]).reduce(function(a,f){ return a + f.kcal; }, 0)};
+  }
+  function renderChart(){
+    var svg = $("chart"), NS = "http://www.w3.org/2000/svg";
+    svg.textContent = "";
+    var days = [], now = new Date();
+    for(var i=6;i>=0;i--){
+      var d = new Date(now.getFullYear(), now.getMonth(), now.getDate()-i);
+      days.push({key:keyFor(d), label: i===0 ? "Today" : d.toLocaleDateString(undefined,{weekday:"short"})});
+    }
+    var goal = metric === "steps" ? state.goals.steps : state.goals.cal;
+    var vals = days.map(function(x){ return dayTotals(x.key)[metric]; });
+    var max = Math.max(goal*1.15, Math.max.apply(null, vals)*1.1, 1);
+    var W=700, H=230, top=24, bottom=34, left=10, right=10;
+    var bw = (W-left-right)/7, plotH = H-top-bottom;
+    function el(n, attrs){ var e = document.createElementNS(NS, n); for(var k in attrs) e.setAttribute(k, attrs[k]); return e; }
+    days.forEach(function(x, i){
+      var h = vals[i]/max*plotH, cx = left + bw*i + bw/2, w = Math.min(46, bw*0.58);
+      var color = metric === "steps" ? "var(--steps)" : (vals[i] > goal ? "var(--over)" : "var(--cal)");
+      svg.appendChild(el("rect", {x:cx-w/2, y:top+plotH-h, width:w, height:Math.max(h,vals[i]?2:0), rx:6, fill:color}));
+      var v = el("text", {x:cx, y:top+plotH-h-6, "class":"val"}); v.textContent = vals[i] ? fmt(vals[i]) : ""; svg.appendChild(v);
+      var l = el("text", {x:cx, y:H-10}); l.textContent = x.label; svg.appendChild(l);
+    });
+    var gy = top + plotH - goal/max*plotH;
+    svg.appendChild(el("line", {x1:left, x2:W-right, y1:gy, y2:gy, "class":"goalline"}));
+    var gl = el("text", {x:W-right-2, y:gy-5, style:"text-anchor:end"}); gl.textContent = "Goal " + fmt(goal); svg.appendChild(gl);
+  }
+
+  /* ---------- render ---------- */
+  function renderLive(){
+    var d = dayData(todayKey), g = state.goals;
+    var steps = d.steps;
+    var cal = d.foods.reduce(function(a,f){ return a + f.kcal; }, 0);
+    $("hero-steps").textContent = fmt(steps);
+    $("ring-big").textContent = fmt(steps);
+    var pct = Math.round(steps / g.steps * 100);
+    $("hero-steps-lbl").textContent = steps >= g.steps ? "Goal reached. Nice work." : fmt(g.steps - steps) + " to go (" + pct + "%)";
+    setRing($("ring-steps"), C_OUT, steps / g.steps);
+    $("steps-sub").textContent = "About " + (steps*KM_PER_STEP).toFixed(1) + " km and " + fmt(steps*KCAL_PER_STEP) + " kcal burned from walking today.";
+  }
+  function render(){
+    var d = dayData(todayKey), g = state.goals;
+    var cal = d.foods.reduce(function(a,f){ return a + f.kcal; }, 0);
+    renderLive();
+    $("hero-cal").textContent = fmt(cal);
+    var diff = g.cal - cal;
+    $("hero-cal-lbl").textContent = diff >= 0 ? fmt(diff) + " kcal left today" : fmt(-diff) + " kcal over goal";
+    var cr = $("ring-cal"); setRing(cr, C_IN, cal / g.cal);
+    cr.classList.toggle("over", diff < 0);
+    if(document.activeElement !== $("goal-steps")) $("goal-steps").value = g.steps;
+    if(document.activeElement !== $("goal-cal")) $("goal-cal").value = g.cal;
+    $("today-label").textContent = new Date().toLocaleDateString(undefined, {weekday:"long", month:"short", day:"numeric"});
+    renderFoods();
+    renderChart();
+  }
+
+  /* roll over to a new day when the date changes */
+  function checkDay(){
+    var k = keyFor(new Date());
+    if(k !== todayKey){ todayKey = k; tipOffset = 0; renderLesson(); render(); }
+  }
+  setInterval(checkDay, 30000);
+  document.addEventListener("visibilitychange", function(){ if(!document.hidden) checkDay(); else saveNow(); });
+  window.addEventListener("pagehide", saveNow);
+
+  /* ---------- start ---------- */
+  applyTheme();
+  renderLesson();
+  setRing($("ring-steps"), C_OUT, 0); setRing($("ring-cal"), C_IN, 0);
+  requestAnimationFrame(function(){ requestAnimationFrame(render); });
+})();
+</script>
+</body>
+</html>
